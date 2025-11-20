@@ -22,34 +22,24 @@ const TelemetrySchema = new mongoose.Schema({
   timestamp: { type: String, default: () => new Date() }
 });
 
-const Telemetry = mongoose.model("Telemetry", TelemetrySchema);
-
-// Rutas
-app.post("/api/telemetry", async (req, res) => {
-  try {
-    const { temperature, humidity, timestamp } = req.body;
-
-    // Si el ESP manda timestamp sin segundos (YYYY-MM-DD HH:mm)
-    let finalTimestamp = timestamp;
-
-    if (timestamp && timestamp.length === 16) {
-      const now = new Date();
-      const seconds = String(now.getSeconds()).padStart(2, "0");
-      finalTimestamp = `${timestamp}:${seconds}`;
-    }
-
-    const saved = await Telemetry.create({
-      temperature,
-      humidity,
-      timestamp: finalTimestamp
-    });
-
-    res.json({ ok: true, saved });
-  } catch (err) {
-    res.status(500).json({ error: err.toString() });
+const TelemetrySchema = new mongoose.Schema({
+  temperature: Number,
+  humidity: Number,
+  timestamp: { 
+    type: String, 
+    default: () => new Date().toISOString().replace("T", " ").substring(0, 19)
   }
 });
 
+// Rutas
+app.post("/api/telemetry", async (req, res) => { 
+  try { 
+    const saved = await Telemetry.create(req.body); 
+    res.json({ ok: true, saved });
+  } catch (err) {
+    res.status(500).json({ error: err.toString() });
+  } 
+});
 
 app.get("/api/telemetry", async (req, res) => {
   const data = await Telemetry.find().sort({ timestamp: -1 }).limit(100);
