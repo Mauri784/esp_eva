@@ -16,11 +16,7 @@ mongoose
   .catch(err => console.error("Error Mongo:", err));
 
 // Modelo
-const TelemetrySchema = new mongoose.Schema({
-  temperature: Number,
-  humidity: Number,
-  timestamp: { type: String, default: () => new Date() }
-});
+const Telemetry = mongoose.model("Telemetry", TelemetrySchema);
 
 const TelemetrySchema = new mongoose.Schema({
   temperature: Number,
