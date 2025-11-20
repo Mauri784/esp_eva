@@ -1,0 +1,18 @@
+services:
+  backend:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGO_URL=mongodb://root:123456@dht-mongo:27017/telemetry?authSource=admin
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:latest
+    container_name: dht-mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: 123456
+    ports:
+      - "27017:27017"
