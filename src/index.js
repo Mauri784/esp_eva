@@ -1,70 +1,51 @@
-import express from "express";
-import mongoose from "mongoose";
-import cors from "cors";
-import dotenv from "dotenv";
+require("dotenv").config();
+const express = require("express");
+const mongoose = require("mongoose");
 
-dotenv.config();
-
+const Telemetry = require("./models/Telemetry");
 const app = express();
-app.use(express.json());
-app.use(cors());
 
-// -------------------------
+app.use(express.json());
+
 // Conexión a MongoDB Atlas
-// -------------------------
 mongoose
   .connect(process.env.MONGO_URL)
-  .then(() => console.log("MongoDB conectado"))
-  .catch(err => console.error("Error Mongo:", err));
+  .then(() => console.log(" MongoDB Atlas conectado"))
+  .catch((err) => console.error(" Error al conectar a Mongo:", err));
 
-
-// -------------------------
-// Modelo (Schema primero, modelo después)
-// -------------------------
-const TelemetrySchema = new mongoose.Schema({
-  temperature: Number,
-  humidity: Number,
-
-  // Generado por backend
-  timestamp_back: {
-    type: String,
-    default: () => {
-      const now = new Date();
-      return now.toISOString().replace("T", " ").substring(0, 16);
-    }
-  },
-
-  // Recibido del ESP32
-  timestamp_esp: {
-    type: String
-  }
-});
-
-// OJO: aquí, después del schema
-const Telemetry = mongoose.model("Telemetry", TelemetrySchema);
-
-
-// -------------------------
-// Rutas
-// -------------------------
+// ---------------------------------------------
+//  POST: Recibir datos del ESP32
+// ---------------------------------------------
 app.post("/api/telemetry", async (req, res) => {
   try {
-    const saved = await Telemetry.create(req.body);
-    res.json({ ok: true, saved });
-  } catch (err) {
-    console.error("Error al guardar:", err);
-    res.status(500).json({ error: err.toString() });
+    const { temperature, humidity } = req.body;
+
+    const data = new Telemetry({
+      temperature,
+      humidity,
+      timestamp: new Date() // <-- solo timestamp del backend
+    });
+
+    await data.save();
+
+    res.status(200).json({ message: "Datos guardados correctamente" });
+  } catch (error) {
+    console.error("Error al guardar:", error);
+    res.status(500).json({ error: "Error al guardar datos" });
   }
 });
 
+// ---------------------------------------------
+//  GET: Obtener datos
+// ---------------------------------------------
 app.get("/api/telemetry", async (req, res) => {
-  const data = await Telemetry.find().sort({ timestamp_back: -1 }).limit(100);
-  res.json(data);
+  try {
+    const data = await Telemetry.find().sort({ timestamp: -1 });
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: "Error al obtener datos" });
+  }
 });
 
-
-// -------------------------
-// Servidor
-// -------------------------
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("Servidor corriendo en puerto", PORT));
+app.listen(PORT, () => console.log(`Servidor escuchando en puerto ${PORT}`));
