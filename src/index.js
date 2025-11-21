@@ -15,34 +15,34 @@ mongoose
   .then(() => console.log("MongoDB conectado"))
   .catch(err => console.error("Error Mongo:", err));
 
-// Modelo actualizado
+/* -------------------------
+   SCHEMA CORRECTO
+   ------------------------- */
 const TelemetrySchema = new mongoose.Schema({
   temperature: Number,
   humidity: Number,
 
-  // Timestamp generado en el backend
+  // Timestamp que genera el backend
   timestamp_back: { 
-    type: String, 
-    default: () => {
-      const now = new Date();
-      const yyyy = now.getFullYear();
-      const mm = String(now.getMonth() + 1).padStart(2, "0");
-      const dd = String(now.getDate()).padStart(2, "0");
-      const hh = String(now.getHours()).padStart(2, "0");
-      const min = String(now.getMinutes()).padStart(2, "0");
-      return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
-    }
+    type: String,
+    default: () => new Date().toISOString().replace("T", " ").substring(0, 19)
   },
 
-  // Timestamp enviado por el ESP32
-  timestamp_esp: { type: String }
-});
+  // Timestamp enviado desde el ESP32
+  timestamp_esp: {
+    type: String
+  }
+}, { collection: "telemetry" });
 
-const Telemetry = mongoose.model("Telemetry", TelemetrySchema);
+/* -------------------------
+   MODELO DEFINIDO DESPUÉS DEL SCHEMA
+   ------------------------- */
+const Telemetry = mongoose.model("TelemetryV2", TelemetrySchema); 
+// Nombre nuevo para forzar a mongoose a recrearlo
 
 // Rutas
-app.post("/api/telemetry", async (req, res) => {
-  try {
+app.post("/api/telemetry", async (req, res) => { 
+  try { 
     const saved = await Telemetry.create({
       temperature: req.body.temperature,
       humidity: req.body.humidity,
@@ -52,7 +52,7 @@ app.post("/api/telemetry", async (req, res) => {
     res.json({ ok: true, saved });
   } catch (err) {
     res.status(500).json({ error: err.toString() });
-  }
+  } 
 });
 
 app.get("/api/telemetry", async (req, res) => {
