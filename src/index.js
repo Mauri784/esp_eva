@@ -19,64 +19,47 @@ mongoose
 
 
 // -------------------------
-// Modelo
+// Modelo (Schema primero, modelo después)
 // -------------------------
 const TelemetrySchema = new mongoose.Schema({
   temperature: Number,
   humidity: Number,
 
-  // Timestamp generado por el backend
+  // Generado por backend
   timestamp_back: {
     type: String,
     default: () => {
       const now = new Date();
-      return now.toISOString().replace("T", " ").substring(0, 16); // YYYY-MM-DD HH:MM
+      return now.toISOString().replace("T", " ").substring(0, 16);
     }
   },
 
-  // Timestamp enviado desde el ESP32
+  // Recibido del ESP32
   timestamp_esp: {
     type: String
   }
 });
 
+// OJO: aquí, después del schema
 const Telemetry = mongoose.model("Telemetry", TelemetrySchema);
 
 
 // -------------------------
 // Rutas
 // -------------------------
-
-// POST (ESP32 envía datos)
 app.post("/api/telemetry", async (req, res) => {
   try {
-    const { temperature, humidity, timestamp_esp } = req.body;
-
-    const saved = await Telemetry.create({
-      temperature,
-      humidity,
-      timestamp_esp
-    });
-
+    const saved = await Telemetry.create(req.body);
     res.json({ ok: true, saved });
-
   } catch (err) {
-    console.error("Error en POST:", err);
+    console.error("Error al guardar:", err);
     res.status(500).json({ error: err.toString() });
   }
 });
 
-// GET (Consultar últimos registros)
 app.get("/api/telemetry", async (req, res) => {
-  try {
-    const data = await Telemetry.find()
-      .sort({ timestamp_back: -1 })
-      .limit(100);
-
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.toString() });
-  }
+  const data = await Telemetry.find().sort({ timestamp_back: -1 }).limit(100);
+  res.json(data);
 });
 
 
@@ -84,6 +67,4 @@ app.get("/api/telemetry", async (req, res) => {
 // Servidor
 // -------------------------
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () =>
-  console.log("Servidor corriendo en puerto", PORT)
-);
+app.listen(PORT, () => console.log("Servidor corriendo en puerto", PORT));
