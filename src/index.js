@@ -15,30 +15,48 @@ mongoose
   .then(() => console.log("MongoDB conectado"))
   .catch(err => console.error("Error Mongo:", err));
 
-// Modelo
-const Telemetry = mongoose.model("Telemetry", TelemetrySchema);
-
+// Modelo actualizado
 const TelemetrySchema = new mongoose.Schema({
   temperature: Number,
   humidity: Number,
-  timestamp: { 
+
+  // Timestamp generado en el backend
+  timestamp_back: { 
     type: String, 
-    default: () => new Date().toISOString().replace("T", " ").substring(0, 19)
-  }
+    default: () => {
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, "0");
+      const dd = String(now.getDate()).padStart(2, "0");
+      const hh = String(now.getHours()).padStart(2, "0");
+      const min = String(now.getMinutes()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+    }
+  },
+
+  // Timestamp enviado por el ESP32
+  timestamp_esp: { type: String }
 });
 
+const Telemetry = mongoose.model("Telemetry", TelemetrySchema);
+
 // Rutas
-app.post("/api/telemetry", async (req, res) => { 
-  try { 
-    const saved = await Telemetry.create(req.body); 
+app.post("/api/telemetry", async (req, res) => {
+  try {
+    const saved = await Telemetry.create({
+      temperature: req.body.temperature,
+      humidity: req.body.humidity,
+      timestamp_esp: req.body.timestamp
+    });
+
     res.json({ ok: true, saved });
   } catch (err) {
     res.status(500).json({ error: err.toString() });
-  } 
+  }
 });
 
 app.get("/api/telemetry", async (req, res) => {
-  const data = await Telemetry.find().sort({ timestamp: -1 }).limit(100);
+  const data = await Telemetry.find().sort({ timestamp_back: -1 }).limit(100);
   res.json(data);
 });
 
