@@ -24,7 +24,7 @@ const TelemetrySchema = new mongoose.Schema({
 
 const Telemetry = mongoose.model("Telemetry", TelemetrySchema);
 
-// Rutas
+// Guardar datos
 app.post("/api/telemetry", async (req, res) => {
   try {
     const saved = await Telemetry.create(req.body);
@@ -34,10 +34,18 @@ app.post("/api/telemetry", async (req, res) => {
   }
 });
 
+// Obtener últimos datos
 app.get("/api/telemetry", async (req, res) => {
   const data = await Telemetry.find().sort({ timestamp: -1 }).limit(100);
   res.json(data);
 });
 
+// ➤ NUEVA API: devuelve un tiempo random entre 4 y 60 segundos
+app.get("/api/update", (req, res) => {
+  const randomTime = Math.floor(Math.random() * (60 - 4 + 1)) + 4;
+  res.json({ delay_seconds: randomTime });
+});
+
+// Servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log("Servidor corriendo en puerto", PORT));
