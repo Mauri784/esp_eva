@@ -40,10 +40,13 @@ app.get("/api/telemetry", async (req, res) => {
   res.json(data);
 });
 
-// ➤ NUEVA API: devuelve un tiempo random entre 4 y 60 segundos
+// ➤ CORREGIDO: ahora envía update_interval_ms
 app.get("/api/update", (req, res) => {
-  const randomTime = Math.floor(Math.random() * (60 - 4 + 1)) + 4;
-  res.json({ delay_seconds: randomTime });
+  const randomSeconds = Math.floor(Math.random() * (60 - 4 + 1)) + 4;
+
+  res.json({
+    update_interval_ms: randomSeconds * 1000
+  });
 });
 
 // Servidor
